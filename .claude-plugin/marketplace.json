@@ -1,0 +1,14 @@
+{
+  "name": "claude-coacher",
+  "description": "Single-plugin marketplace for claude-coacher — a Claude Code plugin that primes Claude with a collaborator frame at session start.",
+  "plugins": [
+    {
+      "name": "claude-coacher",
+      "source": "./",
+      "description": "Primes Claude with a peer-collaborator frame at SessionStart and provides a /coach slash command for status, CLAUDE.md conflict audit, frame reset, and raw-vent-to-productive translation."
+    }
+  ],
+  "owner": {
+    "name": "Omri Ariav"
+  }
+}
