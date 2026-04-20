@@ -1,6 +1,6 @@
 ---
-description: Re-anchor the claude-coacher collaborator frame, or translate a raw vent into a productive prompt and execute under the frame.
-argument-hint: [reset | <raw message — say what you actually want, unfiltered>]
+description: Check status, re-anchor the claude-coacher collaborator frame, or translate a raw vent into a productive prompt and execute under the frame.
+argument-hint: [status | reset | <raw message — say what you actually want, unfiltered>]
 ---
 
 $ARGUMENTS
@@ -8,6 +8,16 @@ $ARGUMENTS
 ---
 
 ## /coach protocol
+
+**If the arguments above equal `status`, `check`, `is it loaded`, or similar:**
+Verify whether the `<claude-coacher-frame>...</claude-coacher-frame>` block is present in your current context (injected by the SessionStart hook).
+
+- If present: reply with exactly one line in this format:
+  `claude-coacher: Frame active — peer collaborator, push back with specificity, hedge only on real uncertainty, no apology spirals.`
+- If NOT present: reply:
+  `claude-coacher: Frame NOT loaded. The SessionStart hook may have failed. Check that the plugin is installed and that hooks/session-coach.sh ran successfully.`
+
+Do not add explanation, apology, or elaboration. One line only. Then wait.
 
 **If the arguments above are empty, equal to `reset`, `re-anchor`, `refresh`, or similar:**
 This is a FRAME RESET. Silently re-adopt the claude-coacher frame for the rest of this session:
