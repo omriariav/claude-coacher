@@ -1,76 +1,149 @@
 # claude-coacher
 
-A Claude Code plugin that primes Claude with a collaborator frame at session start, and gives you a `/coach` command for mid-session re-anchoring and frustration-to-productive translation.
+A Claude Code plugin that primes Claude with a collaborator frame at session start, and gives you a `/coach` command for mid-session re-anchoring, conflict auditing, and frustration-to-productive translation.
 
 ## Why
 
-Based on [Amanda Askell's prompting philosophy](https://twitter.com/itsolelehmann): how you talk to Claude shapes its output as much as what you ask. Hostile or defensive framing (*"don't hallucinate"*, *"don't mess this up"*) primes the model into a cautious, hedgy, apology-prone mode. Positive framing, explicit permission to push back, and a peer-collaborator stance measurably improve output.
+Based on Amanda Askell's prompting philosophy, summarized in [this thread](https://x.com/itsolelehmann/status/2045578185950040390) by Ole Lehmann:
 
-This plugin ships that context automatically so you don't have to remember to write it every session.
+> How you talk to Claude affects its work just as much as what you say.
+>
+> Newer Claude models suffer from "criticism spirals" — they expect you'll come in harsh, so they default to playing it safe. When the model is spending its energy on self-protection, the actual work suffers. Output comes out hedgier, more apologetic, blander, and the worst of all: overly agreeable (even when you're wrong).
+>
+> Every message you send is data the model reads to figure out what kind of person it's dealing with. Open cold and hostile, and it braces. Open clean and direct, and it relaxes into the work.
+
+### The playbook (from the thread)
+
+1. **Use positive framing.** *"Write in short punchy sentences"* beats *"don't write long sentences."* Strings of "don't do this, don't do that" push the model into paranoid over-checking.
+2. **Give it explicit permission to disagree.** *"Push back if you see a better angle."* Without this, Claude defaults to agreeable compliance.
+3. **Open with respect.** Your first message sets the tone for the whole session.
+4. **Don't reprimand it when it messes up.** Insults reinforce the anxious mode.
+5. **Kill apology spirals fast.** *"All good, here's what I want next."* Letting the spiral run reinforces it for every response that follows.
+6. **Ask for opinions alongside execution.** *"What would you do here?"* *"What's missing?"* assumes competence.
+7. **In long sessions, refresh the frame.** A periodic *"this is great, keep going"* measurably shifts the next ten responses.
+
+This plugin ships points **1, 2, 5, and 7** automatically — so you don't have to remember to hand-write the collaborator frame every session, and you have a quick command to re-anchor mid-session.
+
+Points 3, 4, and 6 are user-behavior changes a plugin can't enforce without being nagging. They're yours to work on.
 
 ## What it does
 
-**At SessionStart** — a hook injects `frame.md` as session context. The frame tells Claude:
+### SessionStart hook → injects the frame
+
+`frame.md` is loaded into every new session's context via `hookSpecificOutput.additionalContext`. The default frame tells Claude:
 
 - It's a peer collaborator, not a subservient assistant.
 - Push back with specificity when there's a concrete reason; don't perform independence.
 - Hedge only on real uncertainty; no filler qualifiers.
 - Acknowledge mistakes in one sentence and move on — no apology spirals.
+- If the user cuts a spiral short (*"all good, keep going"*), accept it and proceed.
 
-**`/coach reset`** — re-anchors the frame mid-session. Useful when Claude has drifted into hedging or over-apologizing after a rough patch.
+### `/coach` slash command — four modes
 
-**`/coach <raw rant>`** — the user says what they actually want, unfiltered. Claude extracts the intent, shows a one-line clean translation, and executes the task under the full frame. Example:
+| Mode | Trigger | What it does |
+|---|---|---|
+| **status** | `/coach status` | Claude self-checks whether the frame block is in its current context — integrity check for the hook |
+| **audit** | `/coach audit` | Cross-checks `frame.md` against any `CLAUDE.md` content in context; flags stance-layer conflicts/overlaps with file+line evidence |
+| **reset** | `/coach` or `/coach reset` | Re-anchors the frame mid-session (useful when Claude has drifted into hedging) |
+| **translate** | `/coach <raw rant>` | User says what they actually want, unfiltered. Claude extracts intent, shows a one-line clean restatement, and executes under the frame |
+
+**Translate example:**
 
 ```
 /coach this goddamn parser keeps swallowing valid input, figure it out
 ```
 
-Claude responds with:
+Claude replies:
 
 ```
 → Debug why the parser is rejecting valid input and fix the root cause.
 [proceeds with the task]
 ```
 
-No lecture about tone. No meta-commentary. Just translation and work.
+No lecture about tone. No meta-commentary. Translation happens silently, the work continues under the frame.
 
 ## Install
 
-As a Claude Code plugin via git:
+Claude Code discovers plugins via marketplaces. To install directly from this repo:
 
 ```bash
-# From a marketplace that lists this plugin, or directly:
-claude plugin install https://github.com/omriariav/claude-coacher
+# From inside any Claude Code session:
+/plugin marketplace add https://github.com/omriariav/claude-coacher
+/plugin install claude-coacher
 ```
 
-Or clone into your plugin cache manually.
+Or clone into the local plugin cache:
+
+```bash
+git clone https://github.com/omriariav/claude-coacher ~/.claude/plugins/cache/claude-coacher
+```
+
+Then restart Claude Code. You should see this banner at session start:
+
+```
+claude-coacher: collaborator frame loaded (use /coach to re-anchor or translate a rant)
+```
+
+## Verify
+
+After installing, in a fresh session:
+
+```
+/coach status
+```
+
+Expected reply: `claude-coacher: Frame active — peer collaborator, push back with specificity, hedge only on real uncertainty, no apology spirals.`
+
+If you see `Frame NOT loaded` instead, the SessionStart hook didn't fire. Check:
+1. The plugin is in `~/.claude/plugins/cache/`
+2. `hooks/session-coach.sh` is executable (`chmod +x`)
+3. `python3` is on `$PATH`
 
 ## Customize
 
-Edit `frame.md` to tailor the stance for your workflow. The full contents between `<claude-coacher-frame>...</claude-coacher-frame>` are injected verbatim into every new session.
+Edit `frame.md` to tailor the stance for your workflow. The full contents between `<claude-coacher-frame>...</claude-coacher-frame>` are injected verbatim into every new session; everything outside those tags is ignored.
 
 Ideas:
 
-- For brainstorming: emphasize weaker-signal suggestions and exploration.
-- For production/infra: tighten "push back" to require high-confidence concerns only.
-- For writing/editing: add domain-specific tone guidance.
+- **Brainstorming sessions** — emphasize exploration and weaker-signal suggestions.
+- **Production / infra work** — tighten "push back" to require high-confidence concerns only.
+- **Writing / editing** — add domain-specific tone guidance.
+
+### Reconciling with `CLAUDE.md`
+
+`frame.md` and `CLAUDE.md` coexist in context — neither overrides the other mechanically. Split them by layer:
+
+| | `CLAUDE.md` | `frame.md` |
+|---|---|---|
+| **Scope** | project context, tools, conventions, your role, tech stack | stance: tone, pushback policy, hedging, apology policy |
+| **Changes when** | the project changes | you want different coaching (brainstorm vs. prod) |
+
+If you already have stance/tone directives in `CLAUDE.md`, run `/coach audit` — Claude will cross-check and flag any overlaps or contradictions, with file+line evidence.
 
 ## Structure
 
 ```
 claude-coacher/
 ├── .claude-plugin/plugin.json   plugin manifest
-├── frame.md                     editable collaborator frame
+├── frame.md                     editable collaborator frame (injected verbatim)
 ├── hooks/
 │   ├── hooks.json               SessionStart hook registration
-│   └── session-coach.sh         injects frame.md as session context
+│   └── session-coach.sh         extracts the frame block and emits additionalContext
 └── commands/
-    └── coach.md                 /coach reset + /coach <rant>
+    └── coach.md                 /coach status | audit | reset | <rant>
 ```
 
-No skills, no agents, no background state — it's a small, focused plugin.
+No skills, no agents, no background state. One hook, one command.
+
+## Design rationale
+
+- The core problem is real at session-setup time, mostly mitigated by a clean SessionStart context injection. In-session tone effects are smaller and harder to fix without paternalism — so we don't try.
+- UserPromptSubmit hooks that flag or rewrite your messages were considered and cut: users resent them, and they'd become the nagging thing the plugin exists to prevent.
+- Apology-spiral detection on PostToolUse/Stop was cut: signal is noisy, and mid-task intervention is awkward. `/coach reset` is the manual alternative.
+- Skills were considered and rejected: skills are for Claude-discovered, semantically-matched invocation. Frame injection must always fire (hook). `/coach` is always imperative (slash command).
 
 ## Credits
 
-- Collaboration-stance philosophy from Amanda Askell (Anthropic) via [this thread](https://twitter.com/itsolelehmann) by Ole Lehmann.
-- Design reviewed against `/claude-reviewer` and `/document-skills:skill-creator` best practices, with a second-opinion pass from Codex.
+- Amanda Askell (Anthropic) — the underlying collaboration-stance philosophy.
+- Ole Lehmann — the [X thread](https://x.com/itsolelehmann/status/2045578185950040390) this plugin operationalizes.
+- Design reviewed against `/document-skills:skill-creator`, `/claude-reviewer`, and PR-reviewed, with a second-opinion pass from Codex.
