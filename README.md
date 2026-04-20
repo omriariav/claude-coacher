@@ -1,6 +1,6 @@
 # claude-coacher
 
-A Claude Code plugin that primes Claude with a collaborator frame at session start, and gives you a `/coach` command for mid-session re-anchoring, conflict auditing, and frustration-to-productive translation.
+A Claude Code plugin (name: `coacher`) that primes Claude with a collaborator frame at session start, and gives you four focused commands for mid-session re-anchoring, integrity checks, CLAUDE.md conflict auditing, and frustration-to-productive translation.
 
 ## Why
 
@@ -38,19 +38,19 @@ Points 3, 4, and 6 are user-behavior changes a plugin can't enforce without bein
 - Acknowledge mistakes in one sentence and move on — no apology spirals.
 - If the user cuts a spiral short (*"all good, keep going"*), accept it and proceed.
 
-### `/coach` slash command — four modes
+### Four slash commands
 
-| Mode | Trigger | What it does |
-|---|---|---|
-| **status** | `/coach status` | Claude self-checks whether the frame block is in its current context — integrity check for the hook |
-| **audit** | `/coach audit` | Cross-checks `frame.md` against any `CLAUDE.md` content in context; flags stance-layer conflicts/overlaps with file+line evidence |
-| **reset** | `/coach` or `/coach reset` | Re-anchors the frame mid-session (useful when Claude has drifted into hedging) |
-| **translate** | `/coach <raw rant>` | User says what they actually want, unfiltered. Claude extracts intent, shows a one-line clean restatement, and executes under the frame |
+| Command | What it does |
+|---|---|
+| `/coacher:status` | Claude self-checks whether the frame block is in its current context — integrity check for the hook |
+| `/coacher:audit` | Cross-checks `frame.md` against any `CLAUDE.md` content in context; flags stance-layer conflicts/overlaps with file+line evidence |
+| `/coacher:reset` | Re-anchors the frame mid-session (useful when Claude has drifted into hedging) |
+| `/coacher:rant <text>` | You say what you actually want, unfiltered. Claude extracts the intent, shows a one-line clean restatement, and executes under the frame |
 
-**Translate example:**
+**Rant example:**
 
 ```
-/coach this goddamn parser keeps swallowing valid input, figure it out
+/coacher:rant this goddamn parser keeps swallowing valid input, figure it out
 ```
 
 Claude replies:
@@ -64,24 +64,26 @@ No lecture about tone. No meta-commentary. Translation happens silently, the wor
 
 ## Install
 
-Claude Code discovers plugins via marketplaces. To install directly from this repo:
+From inside any Claude Code session:
 
-```bash
-# From inside any Claude Code session:
+```
 /plugin marketplace add https://github.com/omriariav/claude-coacher
-/plugin install claude-coacher
+/plugin install coacher
+/reload-plugins
 ```
 
-Or clone into the local plugin cache:
+Note the plugin name is `coacher` (the repo is `claude-coacher` but the installable plugin name is shorter).
+
+Or clone into the local plugin cache directly:
 
 ```bash
 git clone https://github.com/omriariav/claude-coacher ~/.claude/plugins/cache/claude-coacher
 ```
 
-Then restart Claude Code. You should see this banner at session start:
+After install you should see this banner at session start:
 
 ```
-claude-coacher: collaborator frame loaded (use /coach to re-anchor or translate a rant)
+coacher: collaborator frame loaded (use /coacher:reset to re-anchor or /coacher:rant to translate a vent)
 ```
 
 ## Verify
@@ -89,10 +91,10 @@ claude-coacher: collaborator frame loaded (use /coach to re-anchor or translate 
 After installing, in a fresh session:
 
 ```
-/coach status
+/coacher:status
 ```
 
-Expected reply: `claude-coacher: Frame active — peer collaborator, push back with specificity, hedge only on real uncertainty, no apology spirals.`
+Expected reply: `coacher: Frame active — peer collaborator, push back with specificity, hedge only on real uncertainty, no apology spirals.`
 
 If you see `Frame NOT loaded` instead, the SessionStart hook didn't fire. Check:
 1. The plugin is in `~/.claude/plugins/cache/`
@@ -118,29 +120,34 @@ Ideas:
 | **Scope** | project context, tools, conventions, your role, tech stack | stance: tone, pushback policy, hedging, apology policy |
 | **Changes when** | the project changes | you want different coaching (brainstorm vs. prod) |
 
-If you already have stance/tone directives in `CLAUDE.md`, run `/coach audit` — Claude will cross-check and flag any overlaps or contradictions, with file+line evidence.
+If you already have stance/tone directives in `CLAUDE.md`, run `/coacher:audit` — Claude will cross-check and flag any overlaps or contradictions, with file+line evidence.
 
 ## Structure
 
 ```
 claude-coacher/
-├── .claude-plugin/plugin.json   plugin manifest
+├── .claude-plugin/
+│   ├── plugin.json              plugin manifest (name: coacher)
+│   └── marketplace.json         single-plugin marketplace manifest
 ├── frame.md                     editable collaborator frame (injected verbatim)
 ├── hooks/
 │   ├── hooks.json               SessionStart hook registration
 │   └── session-coach.sh         extracts the frame block and emits additionalContext
 └── commands/
-    └── coach.md                 /coach status | audit | reset | <rant>
+    ├── status.md                /coacher:status
+    ├── audit.md                 /coacher:audit
+    ├── reset.md                 /coacher:reset
+    └── rant.md                  /coacher:rant <text>
 ```
 
-No skills, no agents, no background state. One hook, one command.
+No skills, no agents, no background state. One hook, four small commands.
 
 ## Design rationale
 
 - The core problem is real at session-setup time, mostly mitigated by a clean SessionStart context injection. In-session tone effects are smaller and harder to fix without paternalism — so we don't try.
 - UserPromptSubmit hooks that flag or rewrite your messages were considered and cut: users resent them, and they'd become the nagging thing the plugin exists to prevent.
-- Apology-spiral detection on PostToolUse/Stop was cut: signal is noisy, and mid-task intervention is awkward. `/coach reset` is the manual alternative.
-- Skills were considered and rejected: skills are for Claude-discovered, semantically-matched invocation. Frame injection must always fire (hook). `/coach` is always imperative (slash command).
+- Apology-spiral detection on PostToolUse/Stop was cut: signal is noisy, and mid-task intervention is awkward. `/coacher:reset` is the manual alternative.
+- Skills were considered and rejected: skills are for Claude-discovered, semantically-matched invocation. Frame injection must always fire (hook). The four `/coacher:*` commands are always user-imperative (slash commands).
 
 ## Credits
 
