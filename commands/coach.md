@@ -1,6 +1,6 @@
 ---
-description: Check status, re-anchor the claude-coacher collaborator frame, or translate a raw vent into a productive prompt and execute under the frame.
-argument-hint: [status | reset | <raw message — say what you actually want, unfiltered>]
+description: Check status, audit CLAUDE.md for conflicts, re-anchor the claude-coacher collaborator frame, or translate a raw vent into a productive prompt and execute under the frame.
+argument-hint: [status | audit | reset | <raw message — say what you actually want, unfiltered>]
 ---
 
 $ARGUMENTS
@@ -18,6 +18,34 @@ Verify whether the `<claude-coacher-frame>...</claude-coacher-frame>` block is p
   `claude-coacher: Frame NOT loaded. The SessionStart hook may have failed. Check that the plugin is installed and that hooks/session-coach.sh ran successfully.`
 
 Do not add explanation, apology, or elaboration. One line only. Then wait.
+
+**If the arguments above equal `audit`, `conflicts`, `compare`, or similar:**
+Cross-check the claude-coacher frame against any `CLAUDE.md` content in your current context (user global, project, and local CLAUDE.md files that were loaded at session start).
+
+Scope of the check — look for stance/behavior directives in CLAUDE.md that overlap or clash with the frame's stance on:
+- hedging and uncertainty language
+- apology behavior after mistakes
+- push-back / disagreement policy
+- concise-vs-verbose tone
+- cautious-vs-direct default
+
+For each conflict or overlap found, output:
+```
+[conflict|overlap] — <short label>
+  CLAUDE.md: "<exact quoted line>"  (source: <file path>)
+  frame.md:  "<exact quoted line>"
+  why:       <one sentence on the tension>
+  suggest:   <move to frame / remove from CLAUDE.md / leave as-is with note>
+```
+
+Distinguish:
+- **conflict** — directives pull in opposite directions (e.g., "always hedge carefully" vs. "do not pre-emptively hedge")
+- **overlap** — same directive expressed in both places (not wrong, but duplicated — suggest consolidating to frame.md so the plugin owns the stance layer)
+
+If no conflicts or overlaps: reply exactly
+`claude-coacher: No conflicts detected between frame.md and CLAUDE.md — they cover distinct layers.`
+
+Do not flag CLAUDE.md content that is purely project/context/tooling (file paths, tech stack, user role, conventions) — only the stance/tone layer is in scope. Do not edit any files from this command; audit only.
 
 **If the arguments above are empty, equal to `reset`, `re-anchor`, `refresh`, or similar:**
 This is a FRAME RESET. Silently re-adopt the claude-coacher frame for the rest of this session:
