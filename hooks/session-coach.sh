@@ -40,6 +40,6 @@ print(json.dumps({
         "hookEventName": "SessionStart",
         "additionalContext": frame,
     },
-    "systemMessage": "claude-coacher: collaborator frame loaded (use /coach to re-anchor or translate a rant)",
+    "systemMessage": "coacher: collaborator frame loaded (use /coacher:reset to re-anchor or /coacher:rant to translate a vent)",
 }))
 PY
