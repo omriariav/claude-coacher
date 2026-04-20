@@ -1,6 +1,9 @@
 {
   "name": "claude-coacher",
-  "description": "Single-plugin marketplace for coacher — a Claude Code plugin that primes Claude with a collaborator frame at session start.",
+  "metadata": {
+    "description": "Single-plugin marketplace for coacher — a Claude Code plugin that primes Claude with a collaborator frame at session start.",
+    "version": "0.2.0"
+  },
   "plugins": [
     {
       "name": "coacher",

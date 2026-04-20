@@ -83,7 +83,7 @@ git clone https://github.com/omriariav/claude-coacher ~/.claude/plugins/cache/cl
 After install you should see this banner at session start:
 
 ```
-claude-coacher: collaborator frame loaded (use /coacher:reset to re-anchor or /coacher:rant to translate)
+coacher: collaborator frame loaded (use /coacher:reset to re-anchor or /coacher:rant to translate a vent)
 ```
 
 ## Verify
@@ -146,8 +146,8 @@ No skills, no agents, no background state. One hook, four small commands.
 
 - The core problem is real at session-setup time, mostly mitigated by a clean SessionStart context injection. In-session tone effects are smaller and harder to fix without paternalism — so we don't try.
 - UserPromptSubmit hooks that flag or rewrite your messages were considered and cut: users resent them, and they'd become the nagging thing the plugin exists to prevent.
-- Apology-spiral detection on PostToolUse/Stop was cut: signal is noisy, and mid-task intervention is awkward. `/coach reset` is the manual alternative.
-- Skills were considered and rejected: skills are for Claude-discovered, semantically-matched invocation. Frame injection must always fire (hook). `/coach` is always imperative (slash command).
+- Apology-spiral detection on PostToolUse/Stop was cut: signal is noisy, and mid-task intervention is awkward. `/coacher:reset` is the manual alternative.
+- Skills were considered and rejected: skills are for Claude-discovered, semantically-matched invocation. Frame injection must always fire (hook). The four `/coacher:*` commands are always user-imperative (slash commands).
 
 ## Credits
 
